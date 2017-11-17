@@ -189,7 +189,7 @@ HTTPUpdateResult ESP8266HTTPUpdate::handleUpdate(HTTPClient& http, const String&
         http.addHeader(F("x-ESP8266-version"), currentVersion);
     }
 
-    const char * headerkeys[] = { "x-MD5" };
+    const char * headerkeys[] = { "x-MD5", "x-amz-meta-s3-MD5" };
     size_t headerkeyssize = sizeof(headerkeys) / sizeof(char*);
 
     // track these headers
@@ -212,8 +212,13 @@ HTTPUpdateResult ESP8266HTTPUpdate::handleUpdate(HTTPClient& http, const String&
     DEBUG_HTTP_UPDATE("[httpUpdate]  - code: %d\n", code);
     DEBUG_HTTP_UPDATE("[httpUpdate]  - len: %d\n", len);
 
+    String md5HeaderName = "x-MD5";
     if(http.hasHeader("x-MD5")) {
         DEBUG_HTTP_UPDATE("[httpUpdate]  - MD5: %s\n", http.header("x-MD5").c_str());
+    } 
+    else if(http.hasHeader("x-amz-meta-s3-MD5")) {
+        md5HeaderName = "x-amz-meta-s3-MD5";
+        DEBUG_HTTP_UPDATE("[httpUpdate]  - MD5: %s\n", http.header("x-amz-meta-s3-MD5").c_str());
     }
 
     DEBUG_HTTP_UPDATE("[httpUpdate] ESP8266 info:\n");
@@ -292,7 +297,7 @@ HTTPUpdateResult ESP8266HTTPUpdate::handleUpdate(HTTPClient& http, const String&
                     }
                 }
 
-                if(runUpdate(*tcp, len, http.header("x-MD5"), command)) {
+                if(runUpdate(*tcp, len, http.header(md5HeaderName), command)) {
                     ret = HTTP_UPDATE_OK;
                     DEBUG_HTTP_UPDATE("[httpUpdate] Update ok\n");
                     http.end();
